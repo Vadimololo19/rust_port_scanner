@@ -6,6 +6,23 @@ use tokio::time::{timeout, Duration};
 use futures::future::join_all;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use num_cpus;
+use std::time::Instant;
+
+fn show_uptime() -> Duration {
+    static START_TIME: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+    
+    let start_time = START_TIME.get_or_init(Instant::now);
+    let uptime = start_time.elapsed();
+    
+    let total_secs = uptime.as_secs();
+    let hours = total_secs / 3600;
+    let minutes = (total_secs % 3600) / 60;
+    let seconds = total_secs % 60;
+    
+    println!("Программа работает: {}ч {}мин {}сек", hours, minutes, seconds);
+    
+    Duration::from_secs(total_secs)
+}
 
 fn parse_mask_and_ip(host_name: &str) -> (u32, u32) {
     let parts: Vec<&str> = host_name.split('/').collect();
@@ -185,6 +202,7 @@ async fn scan_network(cidr: &str, port_spec: &str, max_concurrent: usize) {
 
 #[tokio::main]
 async fn main() {
+    show_uptime();
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
         println!("Usage: {} <ip[/mask]> <port|port-range>", args[0]);
@@ -214,4 +232,5 @@ async fn main() {
     }
     
     println!("\nСканирование завершено.");
+    show_uptime();
 }
